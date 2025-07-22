@@ -1,7 +1,8 @@
 import json
-from typing import Optional
+from typing import Annotated, Optional
 
 from fastapi import FastAPI, Query
+from pydantic import BaseModel
 
 app = FastAPI()
 
@@ -17,14 +18,28 @@ def get_dataset_by_id(dataset_id: str):
     return {"error": "not found"}
 
 
+class FilterParams(BaseModel):
+    model_config = {"extra": "forbid"}
+    element: Optional[str] = None
+    mass: Optional[int] = None
+
+
+def filter(data: dict, filter_params: FilterParams):
+    if not filter_params:
+        return data
+    if filter_params.element:
+        data = [
+            d
+            for d in data
+            if d.get("nuclide", {}).get("element") == filter_params.element
+        ]
+    if filter_params.mass is not None:
+        data = [
+            d for d in data if d.get("nuclide", {}).get("mass") == filter_params.mass
+        ]
+    return data
+
+
 @app.get("/datasets")
-def filter_datasets(
-    element: Optional[str] = Query(None),
-    mass: Optional[int] = Query(None),
-):
-    results = datasets
-    if element:
-        results = [d for d in results if d.get("nuclide", {}).get("element") == element]
-    if mass is not None:
-        results = [d for d in results if d.get("nuclide", {}).get("mass") == mass]
-    return results
+def filter_datasets(filter_query: Annotated[FilterParams, Query(...)]):
+    return filter(datasets, filter_query)
