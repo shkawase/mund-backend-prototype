@@ -22,6 +22,7 @@ class FilterParams(BaseModel):
     model_config = {"extra": "forbid"}
     element: Optional[str] = None
     mass: Optional[int] = None
+    kind: Optional[str] = None
 
 
 def filter(data: dict, filter_params: FilterParams):
@@ -36,6 +37,10 @@ def filter(data: dict, filter_params: FilterParams):
     if filter_params.mass is not None:
         data = [
             d for d in data if d.get("nuclide", {}).get("mass") == filter_params.mass
+        ]
+    if filter_params.kind is not None:
+        data = [
+            d for d in data if d.get("observable", {}).get("kind") == filter_params.kind
         ]
     return data
 
